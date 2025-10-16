@@ -46,7 +46,17 @@ if st.button("Explain my bill"):
         st.write("**Diagnostics — Previous Period**", pd.DataFrame([data["previous"]]))
         st.write("**Diagnostics — Current Period**", pd.DataFrame([data["current"]]))
 
-        # --- Charts section (matplotlib only, single chart per plot, no colors) ---
+        # --- Causes rendering ---
+        st.markdown('### Detected Causes')
+        causes = data.get('causes', [])
+        if not causes:
+            st.info('No specific causes detected with high confidence. Showing general drivers above.')
+        else:
+            for c in causes:
+                st.markdown(f"- **{c['id']}** — {c['message']}  ")
+                st.code(json.dumps(c['evidence'], indent=2))
+
+        # --- Charts section (matplotlib) ---
         st.markdown("### Charts")
         intervals = pd.read_csv("../data/intervals_30min.csv", parse_dates=["timestamp"])
         cid_mask = intervals["customer_id"] == int(cid)
@@ -64,7 +74,6 @@ if st.button("Explain my bill"):
         curr_slice = intervals[(intervals["timestamp"] >= curr_start) & (intervals["timestamp"] <= curr_end + pd.Timedelta(days=1))].copy()
         curr_daily = curr_slice.groupby(curr_slice["timestamp"].dt.date)["kwh"].sum()
 
-        # Plot previous daily
         st.caption("Daily kWh — Previous Period")
         fig1, ax1 = plt.subplots()
         ax1.plot(prev_daily.index, prev_daily.values)
@@ -73,7 +82,6 @@ if st.button("Explain my bill"):
         ax1.set_title("Previous Period Daily Usage")
         st.pyplot(fig1)
 
-        # Plot current daily
         st.caption("Daily kWh — Current Period")
         fig2, ax2 = plt.subplots()
         ax2.plot(curr_daily.index, curr_daily.values)
@@ -82,7 +90,6 @@ if st.button("Explain my bill"):
         ax2.set_title("Current Period Daily Usage")
         st.pyplot(fig2)
 
-        # Scatter temperature vs kWh (current period)
         st.caption("Temperature vs 30-min kWh — Current Period")
         fig3, ax3 = plt.subplots()
         ax3.scatter(curr_slice["temperature_c"], curr_slice["kwh"], s=4)
@@ -102,6 +109,7 @@ if st.button("Explain my bill"):
                 "current_period_kwh": round(float(data["current"]["total_kwh"]), 2),
                 "percent_change": round(float(data["percent_change"]), 1)
             },
+            "causes": data.get("causes", []),
             "actions": [
                 {"type": "link", "label": "View detailed usage", "href": "#"},
                 {"type": "postback", "label": "Energy-saving tips", "payload": "show_tips"}
@@ -111,6 +119,3 @@ if st.button("Explain my bill"):
 
     except Exception as e:
         st.error(str(e))
-
-st.divider()
-st.markdown("**Virtual Agent intents (mock)** — see `va_mock/intents.json` for a simple intent schema calling the API with the current Customer ID.")
