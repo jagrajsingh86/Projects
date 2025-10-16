@@ -1,0 +1,30 @@
+{
+  "language": "en-AU",
+  "intents": [
+    {
+      "name": "high_bill_inquiry",
+      "utterances": [
+        "why is my bill so high",
+        "bill is higher this month",
+        "explain my bill",
+        "why did my energy bill increase",
+        "my bill seems too high"
+      ],
+      "slots": [
+        {
+          "name": "customer_id",
+          "type": "number",
+          "required": true
+        }
+      ],
+      "response_action": {
+        "type": "http",
+        "method": "POST",
+        "endpoint": "http://127.0.0.1:8000/explain",
+        "payload_template": {
+          "customer_id": "{{customer_id}}"
+        }
+      }
+    }
+  ]
+}
